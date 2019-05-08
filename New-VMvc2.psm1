@@ -70,7 +70,7 @@
         } #Foreach
         
         Write-Verbose "Sorting through available VM Hosts for site"
-        $ValidHostsChoices = $ValidHostsChoices | Select-Object {$_.ConnectionState -eq 'Connected'}
+        $ValidHostsChoices = $ValidHostsChoices | Where-Object {$_.ConnectionState -eq 'Connected'}
 
         #Stop if we dont find any available hosts
         if(!$ValidHostsChoices){
