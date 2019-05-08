@@ -104,7 +104,8 @@
         [string]$DiskStorageFormat = 'Thick'
         [Boolean]$CD = $true
         [Boolean]$Floppy = $true
-    
+        
+        <#
         #Stop if we dont have enough space
         $DiskTotalSize = 0
         Foreach($disk in $DiskGB){
@@ -115,6 +116,7 @@
             Write-Verbose -Message "Aborting $Name, due to low space on datastore"
             return
         }
+        #>
 
         #Output 
         Write-Output ""
