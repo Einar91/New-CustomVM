@@ -1,4 +1,4 @@
-﻿function New-CybVMvc2 {
+﻿function New-VMvc2 {
     <#
     .SYNOPSIS
     .DESCRIPTION
