@@ -7,7 +7,7 @@
     #>    
     [CmdletBinding()]
     param(
-    [Parameter(Mandatory=$false,
+    [Parameter(Mandatory=$True,
         ValueFromPipeline=$True,
         ValueFromPipelineByPropertyName=$True,
         Position=1)]
@@ -18,7 +18,7 @@
     [ValidateSet('FreeCPU','FreeMemoryGB','FreeSpaceGB')]
     [String]$SelectHostBy = "FreeSpaceGB",
 
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory=$True)]
     [string]$Server,
 
     [Parameter(Mandatory=$false)]
