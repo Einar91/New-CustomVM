@@ -170,6 +170,9 @@
 
             #Change networkadapter type from e1000 to VMXNET3
             Get-VM -Name $Name | Get-NetworkAdapter | Set-NetworkAdapter -Type Vmxnet3 -Confirm:$false
+
+            #Change SCSI controller type
+            Get-VM -Name $Name | Get-ScsiController | Set-ScsiController -Type ParaVirtual
         } #If
         Else{
             $NextOrExit = Read-Host "Do you want to continue with the next object (if 'no' script will exit)? (Y/N)"
