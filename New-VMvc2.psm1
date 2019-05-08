@@ -15,8 +15,8 @@
     [string[]]$NewVmName,
     
     [Parameter(Mandatory=$false)]
-    [ValidateSet('FreeCPU','FreeMemoryGB')]
-    [String]$SelectHostBy = "FreeCPU",
+    [ValidateSet('FreeCPU','FreeMemoryGB','FreeStorageGB')]
+    [String]$SelectHostBy = "FreeStorageGB",
 
     [Parameter(Mandatory=$false)]
     [string]$Server,
@@ -55,18 +55,20 @@
             #Calculate free mem and cpu
             $FreeCPU = ($item.CpuTotalMhz) - ($item.CpuUsageMhz)
             $FreeMemory = ($item.MemoryTotalGB) - ($item.MemoryUsageGB)
+            $FreeStorage = $item | Get-Datastore | Select-Object -ExpandProperty FreeSpaceGB
 
             #Create an object with cpu and mem values
             $PropertiesHost = @{'Name'=$item.Name
                                     'FreeCPU'=$FreeCPU
-                                    'FreeMemoryGB'=$FreeMemory}
+                                    'FreeMemoryGB'=$FreeMemory
+                                    'FreeStorageGB'=$FreeStorage}
             $ValidHostsChoices += New-Object psobject -Property $PropertiesHost
         } #Foreach
         
         Write-Verbose "Selecting VMHost"
         [string]$VMHost = $ValidHostsChoices | 
             Sort-Object $SelectHostBy -Descending | 
-            select -First 1 -ExpandProperty Name
+            Select-Object -First 1 -ExpandProperty Name
         
         Write-Verbose "Selecting datastore on $VMHost based on FreeSpaceGB"
         [string]$Datastore = Get-VMHost -Name $VMHost | 
