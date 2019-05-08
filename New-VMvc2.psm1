@@ -126,6 +126,7 @@
         Write-Output "Server............. $Server"
         Write-Output "VMHost............. $VMHost"
         Write-Output "Datastore.......... $Datastore"
+        Write-Output "DatastoreFreeSpace. $($Datastore.FreeSpaceGB)"
         Write-Output "Location........... $Location"
         Write-Output "Portgroup.......... $Portgroup"
         Write-Output "GuestId............ $GuestId"
@@ -157,14 +158,12 @@
             Write-Verbose "Creating task to deploy $Name to $VMHost"
             New-Vm @NewVMConf -WhatIf -ErrorAction Stop
 
-            <#
             #Change number of cores per socket
             $CoresPerSocket = New-Object -TypeName VMware.Vim.VirtualMachineConfigSpec -Property @{"NumCoresPerSocket" = 2}
             (Get-VM -Name $Name).ExtensionData.ReconfigVM_Task($CoresPerSocket)
 
             #Change networkadapter type from e1000 to VMXNET3
             Get-VM -Name $Name | Get-NetworkAdapter | Set-NetworkAdapter -Type Vmxnet3 -Confirm:$false
-            #>
         } #If
         Else{
             $NextOrExit = Read-Host "Do you want to continue with the next object (if 'no' script will exit)? (Y/N)"
