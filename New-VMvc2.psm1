@@ -15,8 +15,8 @@
     [string[]]$NewVmName,
     
     [Parameter(Mandatory=$false)]
-    [ValidateSet('FreeCPU','FreeMemoryGB','FreeStorageGB')]
-    [String]$SelectHostBy = "FreeStorageGB",
+    [ValidateSet('FreeCPU','FreeMemoryGB','FreeSpaceGB')]
+    [String]$SelectHostBy = "FreeSpaceGB",
 
     [Parameter(Mandatory=$false)]
     [string]$Server,
@@ -53,17 +53,31 @@
         $ValidHosts = Get-VMHost -Name $SiteName*
         foreach($item in $ValidHosts){
             #Calculate free mem and cpu
+            $ConnectionState = $item.$ConnectionState
             $FreeCPU = ($item.CpuTotalMhz) - ($item.CpuUsageMhz)
             $FreeMemory = ($item.MemoryTotalGB) - ($item.MemoryUsageGB)
             $FreeStorage = $item | Get-Datastore | Select-Object -ExpandProperty FreeSpaceGB
 
             #Create an object with cpu and mem values
             $PropertiesHost = @{'Name'=$item.Name
-                                    'FreeCPU'=$FreeCPU
-                                    'FreeMemoryGB'=$FreeMemory
-                                    'FreeStorageGB'=$FreeStorage}
+                                'ConnectionState'=$ConnectionState
+                                'FreeCPU'=$FreeCPU
+                                'FreeMemoryGB'=$FreeMemory
+                                'FreeSpaceGB'=$FreeStorage}
+
             $ValidHostsChoices += New-Object psobject -Property $PropertiesHost
+
         } #Foreach
+        
+        Write-Verbose "Sorting through available VM Hosts for site"
+        $ValidHostsChoices = $ValidHostsChoices | Select-Object {$_.ConnectionState -eq 'Connected'}
+
+        #Stop if we dont find any available hosts
+        if(!$ValidHostsChoices){
+            Write-Warning -Message "Can not find any available VM Host for $SiteName"
+            Write-Verbose -Message "Aborting $Name, due to no available VM Hosts"
+            return
+        }
         
         Write-Verbose "Selecting VMHost"
         [string]$VMHost = $ValidHostsChoices | 
@@ -75,7 +89,7 @@
             Get-Datastore | 
             Sort-Object FreeSpaceGB -Descending | 
             Select-Object -First 1
-        
+
         Write-Verbose "Selecting VirtualPortGroup from $VMHost"
         $Portgroup = Get-VMHost -Name $VMHost | 
             Get-VirtualPortGroup -Name $SiteName* | 
@@ -86,11 +100,22 @@
         [string]$GuestId = 'windows8Server64Guest'
         [int]$NumCpu = 4
         [int]$MemoryGB = 4
-        $DiskGB = 60,8
+        [int[]]$DiskGB = 60,8
         [string]$DiskStorageFormat = 'Thick'
         [Boolean]$CD = $true
         [Boolean]$Floppy = $true
     
+        #Stop if we dont have enough space
+        $DiskTotalSize = 0
+        Foreach($disk in $DiskGB){
+            $DiskTotalSize += $disk
+        }
+        if($Datastore.FreeSpaceGB -lt ($DiskTotalSize+100)){
+            Write-Warning -Message "Not enough space on $datastore, less than 100GB after creation of new vm"
+            Write-Verbose -Message "Aborting $Name, due to low space on datastore"
+            return
+        }
+
         #Output 
         Write-Output ""
         Write-Output "$Name will be created with the following configuration:"
