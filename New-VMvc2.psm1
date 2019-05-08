@@ -156,7 +156,13 @@
 
             #Create VM
             Write-Verbose "Creating task to deploy $Name to $VMHost"
-            New-Vm @NewVMConf -WhatIf -ErrorAction Stop
+            New-Vm @NewVMConf -ErrorAction Stop
+
+            Do{
+                $FoundVM = Get-VM -Name $Name -ErrorAction SilentlyContinue
+                Write-Verbose "Waiting for creation of VM"
+                Start-Sleep -Seconds 2
+            } Until ($FoundVM)
 
             #Change number of cores per socket
             $CoresPerSocket = New-Object -TypeName VMware.Vim.VirtualMachineConfigSpec -Property @{"NumCoresPerSocket" = 2}
