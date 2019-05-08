@@ -53,7 +53,7 @@
         $ValidHosts = Get-VMHost -Name $SiteName*
         foreach($item in $ValidHosts){
             #Calculate free mem and cpu
-            $ConnectionState = $item.$ConnectionState
+            $ConnectionState = $item.ConnectionState
             $FreeCPU = ($item.CpuTotalMhz) - ($item.CpuUsageMhz)
             $FreeMemory = ($item.MemoryTotalGB) - ($item.MemoryUsageGB)
             $FreeStorage = $item | Get-Datastore | Select-Object -ExpandProperty FreeSpaceGB
