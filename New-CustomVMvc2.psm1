@@ -5,33 +5,30 @@ Start your design with writing out the examples as a functional spesification.
 .DESCRIPTION
 .PARAMETER
 .EXAMPLE
-New-CustomVMvc2 -VMName SRV1 -Verbose
+New-CustomVMvc2 -VMName SRV1 -Verbose -GuestOs Win2012R2
 .EXAMPLE
-New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -SelectHostBy FreeSpaceGB
+New-CustomVMvc2 -VMName SRV1 -Verbose -GuestOs Win2012R2 -SiteName EinarLab
 .EXAMPLE
-New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -portgroup VMNetwork -ScsiType ParaVirtual -SelectHostBy FreeSpaceGB -CoresPerSocket 2
+New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -SelectHostBy FreeSpaceGB/FreeCPU/FreeMemory
 .EXAMPLE
-New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -portgroup VMNetwork -ScsiType ParaVirtual -Host NameOfHost -NumCpu 4 -MemoryGB 4 -DiskGB "60","8","20"
+New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -HostName NameOfHost -Portgroup VMNetwork
 .EXAMPLE
-New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -portgroup VMNetwork -ScsiType ParaVirtual -DiskStorageFormat Thick -CD -Floppy -GuestOs Win2012R2 
+New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -SelectHostBy FreeSpaceGB -Location 'Discovered virtual machine'
+.EXAMPLE
+New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -DiskStorageFormat Thick -DiskGB "60","8" -ScsiType ParaVirtual -Floppy -CD
+.EXAMPLE
+New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -NumCpu 4 -CoresPerSocket 2 -MemoryGB 4 -NetAdapterType Vmxnet3 -CheckHostConnectionState
 #>
 
 function FunctionName {
     [CmdletBinding()]
     #^ Optional ..Binding(SupportShouldProcess=$True,ConfirmImpact='Low')
     param (
-    <# EXAMPLE PARAMETER
     [Parameter(Mandatory=$True,
         ValueFromPipeline=$True,
         ValueFromPipelineByPropertyName=$True)]
-    [Alias('CN','MachineName','HostName','Name')]
-    [string[]]$ComputerName,
-
-    [ValidateSet('WSMan','Dcom')]
-    [string]$Protocol = "Wsman",
-
-    [switch]$ProtocolFallback
-    #>
+    [Alias('NewVmName')]
+    [string[]]$VMName
     )
 
 BEGIN {
