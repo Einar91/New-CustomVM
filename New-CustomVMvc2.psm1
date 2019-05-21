@@ -11,7 +11,7 @@ New-CustomVMvc2 -VMName SRV1 -Verbose -GuestOs Win2012R2 -SiteName EinarLab
 .EXAMPLE
 New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -SelectHostBy FreeSpaceGB/FreeCPU/FreeMemory
 .EXAMPLE
-New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -HostName NameOfHost -Portgroup VMNetwork
+New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -ServerHost NameOfHost -Portgroup VMNetwork
 .EXAMPLE
 New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -SelectHostBy FreeSpaceGB -Location 'Discovered virtual machine'
 .EXAMPLE
@@ -28,7 +28,76 @@ function FunctionName {
         ValueFromPipeline=$True,
         ValueFromPipelineByPropertyName=$True)]
     [Alias('NewVmName')]
-    [string[]]$VMName
+    [string]$VMName,
+    
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [string]$GuestOs,
+
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [string]$SiteName,
+
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [string]$ViServer,
+
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [string]$ServerHost,
+
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [string]$Portgroup,
+
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [string]$SelectHostBy,
+
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [string]$Location,
+
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [string]$DiskStorageFormat,
+
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [int[]]$DiskGB,
+
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [string]$ScsiType,
+
+
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [int]$NumCpu,
+
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [string]$CoresPerSocket,
+
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [int]$MemoryGB,
+
+    [Parameter(Mandatory=$false,
+        ValueFromPipelineByPropertyName=$True)]
+    [string]$NetAdapterType,
+
+    [Parameter(Mandatory=$false)]
+    [Switch]
+    $Floppy,
+
+    [Parameter(Mandatory=$false)]
+    [Switch]
+    $CD,
+
+    [Parameter(Mandatory=$false)]
+    [Switch]
+    $CheckHostConnactionState
     )
 
 BEGIN {
