@@ -17,22 +17,24 @@ New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -SelectHostBy FreeSpaceGB 
 .EXAMPLE
 New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -DiskStorageFormat Thick -DiskGB "60","8" -ScsiType ParaVirtual -Floppy -CD
 .EXAMPLE
-New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -NumCpu 4 -CoresPerSocket 2 -MemoryGB 4 -NetAdapterType Vmxnet3 -CheckHostConnectionState
+New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -NumCpu 4 -CoresPerSocket 2 -MemoryGB 4 -NetAdapterType Vmxnet3 -CheckHostConnectionState -LocationByVMName
 #>
 
-function FunctionName {
+function New-CustomVMvc2 {
     [CmdletBinding()]
     #^ Optional ..Binding(SupportShouldProcess=$True,ConfirmImpact='Low')
     param (
     [Parameter(Mandatory=$True,
         ValueFromPipeline=$True,
-        ValueFromPipelineByPropertyName=$True)]
+        ValueFromPipelineByPropertyName=$True,
+        Position=1)]
     [Alias('NewVmName')]
     [string]$VMName,
     
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [string]$GuestOs,
+    [ValidateSet('Win2012_x64','Win2016_x64','Win2019_x64')]
+    [string]$GuestOs = 'Win2012_x64',
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
@@ -52,7 +54,8 @@ function FunctionName {
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [string]$SelectHostBy,
+    [ValidateSet('FreeCPU','FreeMemoryGB','FreeSpaceGB')]
+    [string]$SelectHostBy = "FreeSpaceGB",
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
@@ -60,7 +63,8 @@ function FunctionName {
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [string]$DiskStorageFormat,
+    [ValidateSet('Thick','Example')]
+    [string]$DiskStorageFormat = 'Thick',
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
@@ -68,12 +72,12 @@ function FunctionName {
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [string]$ScsiType,
-
+    [ValidateSet('ParaVirtual')]
+    [string]$ScsiType = 'ParaVirtual',
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [int]$NumCpu,
+    [int]$NumCpu = 4,
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
@@ -81,11 +85,12 @@ function FunctionName {
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [int]$MemoryGB,
+    [int]$MemoryGB = 4,
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [string]$NetAdapterType,
+    [ValidateSet('Vmxnet3')]
+    [string]$NetAdapterType = 'Vmxnet3',
 
     [Parameter(Mandatory=$false)]
     [Switch]
@@ -97,6 +102,10 @@ function FunctionName {
 
     [Parameter(Mandatory=$false)]
     [Switch]
+    $LocationByVMName,
+
+    [Parameter(Mandatory=$false)]
+    [Switch]
     $CheckHostConnactionState
     )
 
@@ -104,16 +113,18 @@ BEGIN {
     # Intentionaly left empty.
     # Provides optional one-time pre-processing for the function.
     # Setup tasks such as opening database connections, setting up log files, or initializing arrays.
-}
+} #Begin
 
 PROCESS {
-    # Provides record-by-record processing for the function.
-}
+    foreach($NewVM in $VMName){
+
+    } #Foreach $vmname
+} #Process
 
 
 END {
     # Intentionaly left empty.
     # This block is used to provide one-time post-processing for the function.
-}
+} #End
 
 } #Function
