@@ -220,6 +220,20 @@ PROCESS {
             Write-Host "Floppy"
             Write-Host "CD"
 
+            #Define our New-VM parameters !!!!!!!!!!!!!!! Check vmhost.name datastore.name
+            $NewVM_Properties = @{'Name'=$NewVM
+                                    'Server'=$ViServer
+                                    'VMHost'=$ServerHost
+                                    'Location'=$Location
+                                    'GuestId'=$GuestOs
+                                    'NumCpu'=$NumCpu
+                                    'MemoryGB' = $MemoryGB
+                                    'Datastore'= $Datastore
+                                    'DiskGB'=$DiskGB
+                                    'DiskStorageFormat'=$DiskStorageFormat
+                                    'Portgroup'=$Portgroup
+                                    'CD'=$CD
+                                    'Floppy'=$Floppy}
         } #Try
         Catch{
 
