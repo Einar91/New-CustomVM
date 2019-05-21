@@ -72,7 +72,7 @@ function New-CustomVMvc2 {
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [int[]]$DiskGB,
+    [int[]]$DiskGB = 100,
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
@@ -187,8 +187,14 @@ PROCESS {
                         Select-Object -First 1
                 } #If
             } #If $PSBoundParameters.ContainsKey('Portgroup')
-            
-                
+
+            #Select datastore if not defined by parameter
+            If($PSBoundParameters.ContainsKey('Datastore') -eq $false){
+                Write-Verbose "Selecting datastore on $($VMHost.name) based on FreeSpace"
+                $Datastore = $ServerHost |
+                    Get-Datastore |
+                    Select-Object FreeSpaceGB -Descending |
+                    Select-Object -First 1
             }
 
         } #Try
