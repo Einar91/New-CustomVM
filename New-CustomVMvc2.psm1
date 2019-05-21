@@ -59,7 +59,7 @@ function New-CustomVMvc2 {
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [string]$Location,
+    [string]$Location = 'Discovered virtual machine',
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
@@ -195,7 +195,30 @@ PROCESS {
                     Get-Datastore |
                     Select-Object FreeSpaceGB -Descending |
                     Select-Object -First 1
-            }
+            } #If $PSBoundParameters.ContainsKey('Datastore')
+
+            #Output our configuration for new vm
+            Write-Host
+            Write-Host "$NewVM will be created with the following configuration:"
+            Write-Host
+            Write-Host "Name"
+            Write-Host "Server"
+            Write-Host "Site"
+            Write-Host "VMHost"
+            Write-Host "Location"
+            Write-Host "GuestId"
+            Write-Host "NumCpu"
+            Write-Host "CoresPerSocket"
+            Write-Host "MemoryGB"
+            Write-Host "Datastore"
+            Write-Host "DatastoreFreeSpace"
+            Write-Host "DiskGB"
+            Write-Host "StorageFormat"
+            Write-Host "ScsiType"
+            Write-Host "Portgroup"
+            Write-Host "NetAdapterType"
+            Write-Host "Floppy"
+            Write-Host "CD"
 
         } #Try
         Catch{
