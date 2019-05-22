@@ -50,7 +50,7 @@ function New-CustomVMvc2 {
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [string]$Portgroup,
+    $Portgroup,
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
@@ -85,7 +85,7 @@ function New-CustomVMvc2 {
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [string]$CoresPerSocket,
+    [int]$CoresPerSocket = 2,
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
