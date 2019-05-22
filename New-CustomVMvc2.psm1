@@ -17,7 +17,7 @@ New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -SelectHostBy FreeSpaceGB 
 .EXAMPLE
 New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -Datastore 'EinarStorage' -DiskStorageFormat Thick -DiskGB "60","8" -ScsiType ParaVirtual -Floppy -CD
 .EXAMPLE
-New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -NumCpu 4 -CoresPerSocket 2 -MemoryGB 4 -NetAdapterType Vmxnet3 -CheckHostConnectionState -HostByVMName
+New-CustomVMvc2 -VMName SRV1 -ViServer Vcenter.lab.no -NumCpu 4 -CoresPerSocket 2 -MemoryGB 4 -NetAdapterType Vmxnet3 -HostByVMName
 #>
 
 function New-CustomVMvc2 {
@@ -40,7 +40,7 @@ function New-CustomVMvc2 {
         ValueFromPipelineByPropertyName=$True)]
     [string]$SiteName,
 
-    [Parameter(Mandatory=$false,
+    [Parameter(Mandatory=$True,
         ValueFromPipelineByPropertyName=$True)]
     [string]$ViServer,
 
@@ -110,10 +110,6 @@ function New-CustomVMvc2 {
 
     [Parameter(Mandatory=$false)]
     [Switch]
-    $CheckHostConnactionState,
-
-    [Parameter(Mandatory=$false)]
-    [Switch]
     $ConfirmConfiguration
     )
 
@@ -149,12 +145,14 @@ PROCESS {
                     $ValidHostsChoices = @()
                     foreach($VMHost in $ValidHosts){
                         #Calculate free mem, cpu and storage
+                        $ConnectionState = $VMHost.ConnectionState
                         $FreeCPU = ($VMHost.CpuTotalMhz) - ($VMHost.CpuUsageMhz)
                         $FreeMemory = ($VMHost.MemoryTotalGB) - ($VMHost.MemoryUsageGB)
                         $FreeStorage = $VMHost | Get-Datastore | Select-Object -ExpandProperty FreeSpaceGB
 
                         #Create a new object with our properties
                         $ValidHostsProperties = @{'Name'=$VMHost.Name
+                                                'ConnectionState'=$ConnectionState
                                                 'FreeCPU'=$FreeCPU
                                                 'FreeMemoryGB'=$FreeMemory
                                                 'FreeSpaceGB'=$FreeStorage}
@@ -163,13 +161,18 @@ PROCESS {
                 
                     #Select VM based on parameter $SelectByHost
                     $ServerHost = $ValidHostsChoices |
-                        Sort-Object $SelectHostBy -Descending |
+                        Sort-Object ConnectionState,$SelectHostBy -Descending |
                         Select-Object -First 1 -ExpandProperty Name
 
                     #Get full host object
                     $ServerHost = Get-VMHost -Name $ServerHost
                 } #If ($ValidHosts.count) -gt 1
             } #If $PSBoundParameters.ContainsKey('HostByVMName')
+
+            #Make sure our selected host is online, if not abort
+            If(($ServerHost.ConnectionState) -ne 'Connected'){
+                Write-Error -Message "The VMHost $ServerHost ConnectionState is not equal Connected." -ErrorAction Stop
+            }
 
             #Select portgroup if not defined by parameter
             If($PSBoundParameters.ContainsKey('Portgroup') -eq $false){
@@ -198,30 +201,38 @@ PROCESS {
             } #If $PSBoundParameters.ContainsKey('Datastore')
 
             #Output our configuration for new vm
-            Write-Host
-            Write-Host "$NewVM will be created with the following configuration:"
-            Write-Host
-            Write-Host "Name"
-            Write-Host "Server"
-            Write-Host "Site"
-            Write-Host "VMHost"
-            Write-Host "Location"
-            Write-Host "GuestId"
-            Write-Host "NumCpu"
-            Write-Host "CoresPerSocket"
-            Write-Host "MemoryGB"
-            Write-Host "Datastore"
-            Write-Host "DatastoreFreeSpace"
-            Write-Host "DiskGB"
-            Write-Host "StorageFormat"
-            Write-Host "ScsiType"
-            Write-Host "Portgroup"
-            Write-Host "NetAdapterType"
-            Write-Host "Floppy"
-            Write-Host "CD"
+            Write-Verbose
+            Write-Verbose "$NewVM will be created with the following configuration:"
+            Write-Verbose
+            Write-Verbose "Name"
+            Write-Verbose "Server"
+            Write-Verbose "Site"
+            Write-Verbose "VMHost"
+            Write-Verbose "Location"
+            Write-Verbose "GuestId"
+            Write-Verbose "NumCpu"
+            Write-Verbose "CoresPerSocket"
+            Write-Verbose "MemoryGB"
+            Write-Verbose "Datastore"
+            Write-Verbose "DatastoreFreeSpace"
+            Write-Verbose "DiskGB"
+            Write-Verbose "StorageFormat"
+            Write-Verbose "ScsiType"
+            Write-Verbose "Portgroup"
+            Write-Verbose "NetAdapterType"
+            Write-Verbose "Floppy"
+            Write-Verbose "CD"
+
+            #For testing purposes, confirm creation
+            $ProceedOrNo = Read-Host "Do you wish to continue with creation of $NewVM ? (Y/N)"
+
+            if($ProceedOrNo -ne 'Y' -or $ProceedOrNo -ne 'y'){
+                Write-Warning -Message "$NewVM not created."
+                throw "$NewVM not created due to user answere to proceed or not with creation."
+            }
 
             #Define our New-VM parameters !!!!!!!!!!!!!!! Check vmhost.name datastore.name
-            $NewVM_Properties = @{'Name'=$NewVM
+            $NewVM_Param = @{'Name'=$NewVM
                                     'Server'=$ViServer
                                     'VMHost'=$ServerHost
                                     'Location'=$Location
@@ -234,6 +245,27 @@ PROCESS {
                                     'Portgroup'=$Portgroup
                                     'CD'=$CD
                                     'Floppy'=$Floppy}
+            
+            #Create VM and configure - !!!! -what if for testing purposes
+            Write-Verbose -Message "Creating task to deploy $NewVM to $ServerHost"
+            New-Vm $NewVM_Param -whatif -ErrorAction Stop
+
+            #Make sure VM is available before reconfigurations
+            Do{
+                $FoundVM = Get-VM -Name $Name -ErrorAction SilentlyContinue
+                Write-Verbose "Waiting for creation of VM"
+                Start-Sleep -Seconds 2
+            } Until ($FoundVM)
+
+            #Change number of cores per socket
+            $CoresPerSocket = New-Object -TypeName VMware.Vim.VirtualMachineConfigSpec -Property @{"NumCoresPerSocket" = 2}
+            (Get-VM -Name $Name).ExtensionData.ReconfigVM_Task($CoresPerSocket)
+
+            #Change networkadapter type from e1000 to VMXNET3
+            Get-VM -Name $Name | Get-NetworkAdapter | Set-NetworkAdapter -Type Vmxnet3 -Confirm:$false
+
+            #Change SCSI controller type
+            Get-VM -Name $Name | Get-ScsiController | Set-ScsiController -Type ParaVirtual
         } #Try
         Catch{
 
