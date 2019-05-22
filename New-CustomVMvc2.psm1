@@ -114,9 +114,9 @@ function New-CustomVMvc2 {
     )
 
 BEGIN {
-    # Intentionaly left empty.
-    # Provides optional one-time pre-processing for the function.
-    # Setup tasks such as opening database connections, setting up log files, or initializing arrays.
+    function Timestamp{
+        (Get-Date -Format "dd.MM.yyyy hh:mm:ss").ToString()
+    }
 } #Begin
 
 PROCESS {
@@ -124,7 +124,7 @@ PROCESS {
         Try{
             #Check if we want to define host for VM by name
             if($PSBoundParameters.ContainsKey('HostByVMName')){
-                Write-Verbose -Message 'Setting sitename by vm name.'
+                Write-Verbose -Message "$(TimeStamp) Setting SiteName by VMName."
                 $SiteName = ($NewVM.Substring(0,3)).ToUpper()
             
                 Write-Verbose -Message "Searching avilable host for $SiteName"
@@ -137,7 +137,7 @@ PROCESS {
                 }
 
                 if(($ValidHosts.count) -eq 1){
-                    $ServerHost = $ValidHosts
+                    $ServerHost = $ValidHosts | Select-Object -ExpandProperty Name
                 } #If
                 
                 if(($ValidHosts.count) -gt 1 ){
@@ -163,38 +163,38 @@ PROCESS {
                     $ServerHost = $ValidHostsChoices |
                         Sort-Object ConnectionState,$SelectHostBy -Descending |
                         Select-Object -First 1 -ExpandProperty Name
-
-                    #Get full host object
-                    $ServerHost = Get-VMHost -Name $ServerHost
                 } #If ($ValidHosts.count) -gt 1
             } #If $PSBoundParameters.ContainsKey('HostByVMName')
 
+            #Get our host object to work with
+            $VMWareHost = Get-VMHost -Name $ServerHost
+
             #Make sure our selected host is online, if not abort
-            If(($ServerHost.ConnectionState) -ne 'Connected'){
-                Write-Error -Message "The VMHost $ServerHost ConnectionState is not equal Connected." -ErrorAction Stop
+            If($VMWareHost.ConnectionState -notmatch 'Connected'){
+                Write-Error -Message "The VMHost $VMWareHost.Name ConnectionState is not equal Connected." -ErrorAction Stop
             }
 
             #Select portgroup if not defined by parameter
             If($PSBoundParameters.ContainsKey('Portgroup') -eq $false){
-                Write-Verbose -Message "Selecting VirtualPortGroup from $($ServerHost.Name)"
-                $Portgroup = $ServerHost |
+                Write-Verbose -Message "Selecting VirtualPortGroup from $VMWareHost.Name"
+                $Portgroup = $VMWareHost |
                     Get-VirtualPortGroup -Name $SiteName* |
                     Select-Object -First 1
                 
                 if(!$Portgroup){
                     Write-Warning -Message "No SiteName portgroup found for $SiteName"
-                    Write-Verbose -Message "Searching for alternative portgroup on $($ServerHost.Name)"
-                    $Portgroup = $ServerHost |
+                    Write-Verbose -Message "Searching for alternative portgroup on $VMWareHost.Name"
+                    $Portgroup = $VMWareHost |
                         Get-VirtualPortGroup |
-                        Sort-Object VLandId -Descending |
+                        Sort-Object VLanId -Descending |
                         Select-Object -First 1
                 } #If
             } #If $PSBoundParameters.ContainsKey('Portgroup')
 
             #Select datastore if not defined by parameter
             If($PSBoundParameters.ContainsKey('Datastore') -eq $false){
-                Write-Verbose "Selecting datastore on $($VMHost.name) based on FreeSpace"
-                $Datastore = $ServerHost |
+                Write-Verbose "Selecting datastore on $($VMWareHost.name) based on FreeSpace"
+                $Datastore = $VMWareHost |
                     Get-Datastore |
                     Select-Object FreeSpaceGB -Descending |
                     Select-Object -First 1
@@ -252,20 +252,20 @@ PROCESS {
 
             #Make sure VM is available before reconfigurations
             Do{
-                $FoundVM = Get-VM -Name $Name -ErrorAction SilentlyContinue
+                $FoundVM = Get-VM -Name $NewVM -ErrorAction SilentlyContinue
                 Write-Verbose "Waiting for creation of VM"
                 Start-Sleep -Seconds 2
             } Until ($FoundVM)
 
             #Change number of cores per socket
             $CoresPerSocket = New-Object -TypeName VMware.Vim.VirtualMachineConfigSpec -Property @{"NumCoresPerSocket" = 2}
-            (Get-VM -Name $Name).ExtensionData.ReconfigVM_Task($CoresPerSocket)
+            (Get-VM -Name $NewVM).ExtensionData.ReconfigVM_Task($CoresPerSocket)
 
             #Change networkadapter type from e1000 to VMXNET3
-            Get-VM -Name $Name | Get-NetworkAdapter | Set-NetworkAdapter -Type Vmxnet3 -Confirm:$false
+            Get-VM -Name $NewVM | Get-NetworkAdapter | Set-NetworkAdapter -Type Vmxnet3 -Confirm:$false
 
             #Change SCSI controller type
-            Get-VM -Name $Name | Get-ScsiController | Set-ScsiController -Type ParaVirtual
+            Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type ParaVirtual
         } #Try
         Catch{
 
