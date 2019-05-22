@@ -29,7 +29,7 @@ function New-CustomVMvc2 {
         ValueFromPipelineByPropertyName=$True,
         Position=1)]
     [Alias('NewVmName')]
-    [string]$VMName,
+    [string[]]$VMName,
     
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
@@ -252,7 +252,7 @@ PROCESS {
             Do{
                 $FoundVM = Get-VM -Name $NewVM -ErrorAction SilentlyContinue
                 Write-Verbose "Waiting for creation of VM"
-                Start-Sleep -Seconds 2
+                Start-Sleep -Seconds 5
             } Until ($FoundVM)
 
             #Change number of cores per socket
