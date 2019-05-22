@@ -171,19 +171,19 @@ PROCESS {
 
             #Make sure our selected host is online, if not abort
             If($VMWareHost.ConnectionState -notmatch 'Connected'){
-                Write-Error -Message "The VMHost $VMWareHost.Name ConnectionState is not equal Connected." -ErrorAction Stop
+                Write-Error -Message "The VMHost $($VMWareHost.name) ConnectionState is not equal Connected." -ErrorAction Stop
             }
 
             #Select portgroup if not defined by parameter
             If($PSBoundParameters.ContainsKey('Portgroup') -eq $false){
-                Write-Verbose -Message "Selecting VirtualPortGroup from $VMWareHost.Name"
+                Write-Verbose -Message "Selecting VirtualPortGroup from $($VMWareHost.name)"
                 $Portgroup = $VMWareHost |
                     Get-VirtualPortGroup -Name $SiteName* |
                     Select-Object -First 1
                 
                 if(!$Portgroup){
                     Write-Warning -Message "No SiteName portgroup found for $SiteName"
-                    Write-Verbose -Message "Searching for alternative portgroup on $VMWareHost.Name"
+                    Write-Verbose -Message "Searching for alternative portgroup on $($VMWareHost.name)"
                     $Portgroup = $VMWareHost |
                         Get-VirtualPortGroup |
                         Sort-Object VLanId -Descending |
@@ -196,32 +196,30 @@ PROCESS {
                 Write-Verbose "Selecting datastore on $($VMWareHost.name) based on FreeSpace"
                 $Datastore = $VMWareHost |
                     Get-Datastore |
-                    Select-Object FreeSpaceGB -Descending |
+                    Sort-Object FreeSpaceGB -Descending |
                     Select-Object -First 1
             } #If $PSBoundParameters.ContainsKey('Datastore')
 
             #Output our configuration for new vm
-            Write-Verbose
             Write-Verbose "$NewVM will be created with the following configuration:"
-            Write-Verbose
-            Write-Verbose "Name"
-            Write-Verbose "Server"
-            Write-Verbose "Site"
-            Write-Verbose "VMHost"
-            Write-Verbose "Location"
-            Write-Verbose "GuestId"
-            Write-Verbose "NumCpu"
-            Write-Verbose "CoresPerSocket"
-            Write-Verbose "MemoryGB"
-            Write-Verbose "Datastore"
-            Write-Verbose "DatastoreFreeSpace"
-            Write-Verbose "DiskGB"
-            Write-Verbose "StorageFormat"
-            Write-Verbose "ScsiType"
-            Write-Verbose "Portgroup"
-            Write-Verbose "NetAdapterType"
-            Write-Verbose "Floppy"
-            Write-Verbose "CD"
+            Write-Verbose "Name....................$NewVM"
+            Write-Verbose "Server..................$VIServer"
+            Write-Verbose "Site....................$SiteName"
+            Write-Verbose "VMHost..................$($VMWareHost.Name)"
+            Write-Verbose "Location................$Location"
+            Write-Verbose "GuestId.................$GuestOs"
+            Write-Verbose "NumCpu..................$NumCpu"
+            Write-Verbose "CoresPerSocket..........$CoresPerSocket"
+            Write-Verbose "MemoryGB................$MemoryGB"
+            Write-Verbose "Datastore...............$Datastore"
+            Write-Verbose "DatastoreFreeSpace......"
+            Write-Verbose "DiskGB..................$DiskGB"
+            Write-Verbose "StorageFormat...........$DiskStorageFormat"
+            Write-Verbose "ScsiType................$ScsiType"
+            Write-Verbose "Portgroup...............$Portgroup"
+            Write-Verbose "NetAdapterType..........$NetAdapterType"
+            Write-Verbose "Floppy..................$CD"
+            Write-Verbose "CD......................$Floppy"
 
             #For testing purposes, confirm creation
             $ProceedOrNo = Read-Host "Do you wish to continue with creation of $NewVM ? (Y/N)"
@@ -234,7 +232,7 @@ PROCESS {
             #Define our New-VM parameters !!!!!!!!!!!!!!! Check vmhost.name datastore.name
             $NewVM_Param = @{'Name'=$NewVM
                                     'Server'=$ViServer
-                                    'VMHost'=$ServerHost
+                                    'VMHost'=$VMWareHost
                                     'Location'=$Location
                                     'GuestId'=$GuestOs
                                     'NumCpu'=$NumCpu
@@ -248,7 +246,7 @@ PROCESS {
             
             #Create VM and configure - !!!! -what if for testing purposes
             Write-Verbose -Message "Creating task to deploy $NewVM to $ServerHost"
-            New-Vm $NewVM_Param -whatif -ErrorAction Stop
+            New-Vm @NewVM_Param -whatif -ErrorAction Stop
 
             #Make sure VM is available before reconfigurations
             Do{
@@ -268,7 +266,8 @@ PROCESS {
             Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type ParaVirtual
         } #Try
         Catch{
-
+            Write-Verbose 'Something went wrong....'
+            $Error
         } #Catch
     } #Foreach $vmname
 } #Process
