@@ -276,11 +276,12 @@ PROCESS {
 
             #Change networkadapter type from e1000 to VMXNET3
             Write-Verbose -Message "Configuring network adapter type to $NetAdapterType"
-            $AdapterConfigResult = Get-VM -Name $NewVM | Get-NetworkAdapter | Set-NetworkAdapter -Type $NetAdapterType -Confirm:$false
+            $AdapterConfigResult = Get-VM -Name $NewVM | Get-NetworkAdapter | Set-NetworkAdapter -Type $NetAdapterType -Confirm:$false -ErrorAction Stop -ErrorVariable ErrNetAdap
 
             #Change SCSI controller type
             Write-Verbose -Message "Configuring SCSI controller type to $ScsiType"
             Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type $ScsiType 
+
 
 
         } #Try
@@ -317,6 +318,12 @@ PROCESS {
                 if($ErrCores){
                     Write-Warning -Message "$NewVM failed post-config of CPU, see log."
                     "$NewVM not created, due to $($ErrCores.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
+                }
+                
+                #Error handling for reconfig netadaptertype
+                if($ErrNetAdap){
+                    Write-Warning -Message "$NewVM failed post-config of CPU, see log."
+                    "$NewVM not created, due to $($ErrNetAdap.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
                 }
                 
             } #If log to filepath
