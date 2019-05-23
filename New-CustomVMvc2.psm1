@@ -270,7 +270,7 @@ PROCESS {
             } Until ($FoundVM)
 
             #Change number of cores per socket
-            $CoresPerSocket = New-Object -TypeName VMware.Vim.VirtualMachineConfigSpec -Property @{"NumCoresPerSocket" = 2}
+            $CoresPerSocket = New-Object -TypeName VMware.Vim.VirtualMachineConfigSpec -Property @{"NumCoresPerSocket" = $CoresPerSocket}
             (Get-VM -Name $NewVM).ExtensionData.ReconfigVM_Task($CoresPerSocket)
 
             #Change networkadapter type from e1000 to VMXNET3
