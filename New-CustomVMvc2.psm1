@@ -33,8 +33,8 @@ function New-CustomVMvc2 {
     
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [ValidateSet('Win2012_x64','Win2016_x64','Win2019_x64')]
-    [string]$GuestOs = 'Win2012_x64',
+    [ValidateSet('windows8Server64Guest','Win2012_x64','Win2016_x64','Win2019_x64')]
+    [string]$GuestOs = 'windows8Server64Guest',
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
@@ -243,7 +243,7 @@ PROCESS {
                 Write-Error "$NewVM not created, due to user answere to proceed or not with creation of VM." -ErrorAction Stop -ErrorVariable ErrUserAbort
             }
 
-            #Define our New-VM parameters !!!!!!!!!!!!!!! Check vmhost.name datastore.name
+            #Define our New-VM parameters
             $NewVM_Param = @{'Name'=$NewVM
                                     'Server'=$ViServer
                                     'VMHost'=$VMWareHost
@@ -258,7 +258,7 @@ PROCESS {
                                     'CD'=$CD
                                     'Floppy'=$Floppy}
             
-            #Create VM and configure - !!!! -what if for testing purposes
+            #Create VM and configure post creation tasks
             Write-Verbose -Message "Creating task to deploy $NewVM to $ServerHost"
             New-Vm @NewVM_Param -whatif -ErrorAction Stop
 
