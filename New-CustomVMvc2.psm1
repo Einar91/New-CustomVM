@@ -85,7 +85,7 @@ function New-CustomVMvc2 {
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [int]$CoresPerSocket = 2,
+    $CoresPerSocket = 2,
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
@@ -270,8 +270,8 @@ PROCESS {
             } Until ($FoundVM)
 
             #Change number of cores per socket
-            $CoresPerSocket = New-Object -TypeName VMware.Vim.VirtualMachineConfigSpec -Property @{"NumCoresPerSocket" = $CoresPerSocket}
-            (Get-VM -Name $NewVM).ExtensionData.ReconfigVM_Task($CoresPerSocket)
+            $ConfigCoresPerSocket = New-Object -TypeName VMware.Vim.VirtualMachineConfigSpec -Property @{"NumCoresPerSocket" = $CoresPerSocket}
+            (Get-VM -Name $NewVM).ExtensionData.ReconfigVM_Task($ConfigCoresPerSocket)
 
             #Change networkadapter type from e1000 to VMXNET3
             Get-VM -Name $NewVM | Get-NetworkAdapter | Set-NetworkAdapter -Type Vmxnet3 -Confirm:$false
