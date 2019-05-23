@@ -266,7 +266,7 @@ PROCESS {
             
             #Create VM and configure post creation tasks
             Write-Verbose -Message "Creating task to deploy $NewVM to $ServerHost"
-            $NewVMResult = New-Vm @NewVM_Param -whatif -ErrorAction Stop -ErrorVariable ErrNewVM
+            $NewVMResult = New-Vm @NewVM_Param -ErrorAction Stop -ErrorVariable ErrNewVM
 
             #Make sure VM is available before reconfigurations
             Do{
