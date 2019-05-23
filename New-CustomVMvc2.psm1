@@ -226,7 +226,7 @@ PROCESS {
             Write-Verbose "CoresPerSocket..........$CoresPerSocket"
             Write-Verbose "MemoryGB................$MemoryGB"
             Write-Verbose "Datastore...............$Datastore"
-            Write-Verbose "DatastoreFreeSpace......"
+            Write-Verbose "DatastoreFreeSpaceGB....$($Datastore.FreeSpaceGB)"
             Write-Verbose "DiskGB..................$DiskGB"
             Write-Verbose "StorageFormat...........$DiskStorageFormat"
             Write-Verbose "ScsiType................$ScsiType"
@@ -240,7 +240,7 @@ PROCESS {
 
             if($ProceedOrNo -ne 'Y' -or $ProceedOrNo -ne 'y'){
                 Write-Warning -Message "$NewVM not created."
-                Write-Error "$NewVM not created due to user answere to proceed or not with creation." -ErrorAction Stop -ErrorVariable ErrUserAbort
+                Write-Error "$NewVM not created, due to user answere to proceed or not with creation of VM." -ErrorAction Stop -ErrorVariable ErrUserAbort
             }
 
             #Define our New-VM parameters !!!!!!!!!!!!!!! Check vmhost.name datastore.name
@@ -280,21 +280,28 @@ PROCESS {
             Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type ParaVirtual
         } #Try
         Catch{
-            #Error handling for no vmhost found
-            if($ErrNoHost -and $PSBoundParameters.ContainsKey('LogToFilePath')){
-                $ErrNoHost.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath
-            } #IF ErrNoHost
+            #Log errors to filepath if parameter is specified
+            if($PSBoundParameters.ContainsKey('LogToFilePath')){
+                #Error handling for no vmhost found
+                if($ErrNoHost){
+                    $ErrNoHost.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath -Append
+                } #If ErrNoHost
 
-            #Error handling for vmhost connection state not connected
-            if($ErrHostConnection -and $PSBoundParameters.ContainsKey('LogToFilePath')){
-                $ErrHostConnection.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath
-            } #If ErrStorageSpace
+                #Error handling for vmhost connection state not connected
+                if($ErrHostConnection){
+                    $ErrHostConnection.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath -Append
+                } #If ErrHostConnection
 
-            #Error handling for not enough storage capacity
-            if($ErrStorageSpace -and $PSBoundParameters.ContainsKey('LogToFilePath')){
-                $ErrStorageSpace.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath
-            } #If ErrStorageSpace
-            
+                #Error handling for not enough storage capacity
+                if($ErrStorageSpace){
+                    $ErrStorageSpace.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath -Append
+                } #If ErrStorageSpace
+
+                #Error handling for user abortion to proceede or not ErrUserAbort
+                if($ErrUserAbort){
+                    $ErrUserAbort.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath -Append
+                } #If ErrHostConnection
+            } #If log to filepath
         } #Catch
     } #Foreach $vmname
 } #Process
