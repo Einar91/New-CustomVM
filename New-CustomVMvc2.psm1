@@ -250,8 +250,8 @@ PROCESS {
                                     'Location'=$Location
                                     'GuestId'=$GuestOs
                                     'NumCpu'=$NumCpu
-                                    'MemoryGB' = $MemoryGB
-                                    'Datastore'= $Datastore
+                                    'MemoryGB'=$MemoryGB
+                                    'Datastore'=$Datastore
                                     'DiskGB'=$DiskGB
                                     'DiskStorageFormat'=$DiskStorageFormat
                                     'Portgroup'=$Portgroup
