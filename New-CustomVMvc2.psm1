@@ -295,7 +295,8 @@ PROCESS {
 
             if($NewVMResult -and $AdapterConfigResult -and $ScsiResult){
                 $obj_properties = @{'Name'=$NewVMResult.Name
-                                    'MacAddress'=$AdapterConfigResult.MacAddress}
+                                    'MacAddress'=$AdapterConfigResult.MacAddress
+                                    'PortGroup'=$AdapterConfigResult.NetworkName}
                 $obj = New-Object psobject -Property $obj_properties
                 $obj
             }
