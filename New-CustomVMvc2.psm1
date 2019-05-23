@@ -126,7 +126,7 @@ PROCESS {
     foreach($NewVM in $VMName){
         Try{
             #Check if name is available, if not abort
-            $CheckNameAvailabilty = Get-VM -Name $NewVM -ErrorAction SilentlyContinue
+            $CheckNameAvailabilty = Get-VM -Name $NewVM -ErrorAction SilentlyContinue -Verbose:$false
             if($CheckNameAvailabilty){
                 Write-Error -Message "$NewVM not created, a vm with the name $NewVM allready exist." -ErrorAction Stop -ErrorVariable ErrNameNotAvailable
             }
@@ -137,7 +137,7 @@ PROCESS {
                 $SiteName = ($NewVM.Substring(0,3)).ToUpper()
             
                 Write-Verbose -Message "Searching avilable host for $SiteName"
-                $ValidHosts = Get-VMHost -Name $SiteName*
+                $ValidHosts = Get-VMHost -Name $SiteName* -Verbose:$false
 
                 #If no valid hosts, write warning and abort.
                 if(!$ValidHosts){
@@ -157,7 +157,7 @@ PROCESS {
                         $ConnectionState = $VMHost.ConnectionState
                         $FreeCPU = ($VMHost.CpuTotalMhz) - ($VMHost.CpuUsageMhz)
                         $FreeMemory = ($VMHost.MemoryTotalGB) - ($VMHost.MemoryUsageGB)
-                        $FreeStorage = $VMHost | Get-Datastore | Select-Object -ExpandProperty FreeSpaceGB
+                        $FreeStorage = $VMHost | Get-Datastore -Verbose:$false | Select-Object -ExpandProperty FreeSpaceGB
 
                         #Create a new object with our properties
                         $ValidHostsProperties = @{'Name'=$VMHost.Name
@@ -176,7 +176,7 @@ PROCESS {
             } #If $PSBoundParameters.ContainsKey('HostByVMName')
 
             #Get our host object to work with
-            $VMWareHost = Get-VMHost -Name $ServerHost
+            $VMWareHost = Get-VMHost -Name $ServerHost -Verbose:$false
 
             #Make sure our selected host is online, if not abort
             If($VMWareHost.ConnectionState -notmatch 'Connected'){
@@ -187,14 +187,14 @@ PROCESS {
             If($PSBoundParameters.ContainsKey('Portgroup') -eq $false){
                 Write-Verbose -Message "Selecting VirtualPortGroup from $($VMWareHost.name)"
                 $Portgroup = $VMWareHost |
-                    Get-VirtualPortGroup -Name $SiteName* |
+                    Get-VirtualPortGroup -Name $SiteName* -Verbose:$false |
                     Select-Object -First 1
                 
                 if(!$Portgroup){
                     Write-Warning -Message "No SiteName portgroup found for $SiteName"
                     Write-Verbose -Message "Searching for alternative portgroup on $($VMWareHost.name)"
                     $Portgroup = $VMWareHost |
-                        Get-VirtualPortGroup |
+                        Get-VirtualPortGroup -Verbose:$false |
                         Sort-Object VLanId -Descending |
                         Select-Object -First 1
                 } #If
@@ -270,23 +270,23 @@ PROCESS {
 
             #Make sure VM is available before reconfigurations
             Do{
-                $FoundVM = Get-VM -Name $NewVM -ErrorAction SilentlyContinue
+                $CreatedVM = Get-VM -Name $NewVM -ErrorAction SilentlyContinue -Verbose:$false
                 Write-Verbose "Waiting for creation of VM"
                 Start-Sleep -Seconds 5
-            } Until ($FoundVM)
+            } Until ($CreatedVM)
 
             #Change number of cores per socket
             Write-Verbose -Message "Configuring number of cores per socket to $CoresPerSocket"
             $ConfigCoresPerSocket = New-Object -TypeName VMware.Vim.VirtualMachineConfigSpec -Property @{"NumCoresPerSocket" = $CoresPerSocket} -ErrorAction Stop -ErrorVariable ErrCores
-            (Get-VM -Name $NewVM).ExtensionData.ReconfigVM_Task($ConfigCoresPerSocket) | Out-Null
+            ($CreatedVM).ExtensionData.ReconfigVM_Task($ConfigCoresPerSocket) | Out-Null
 
             #Change networkadapter type from e1000 to VMXNET3
             Write-Verbose -Message "Configuring network adapter type to $NetAdapterType"
-            $AdapterConfigResult = Get-VM -Name $NewVM | Get-NetworkAdapter | Set-NetworkAdapter -Type $NetAdapterType -Confirm:$false -ErrorAction Stop -ErrorVariable ErrNetAdap
+            $AdapterConfigResult = $CreatedVM | Get-NetworkAdapter -Verbose:$false | Set-NetworkAdapter -Type $NetAdapterType -Confirm:$false -ErrorAction Stop -ErrorVariable ErrNetAdap -Verbose:$false
 
             #Change SCSI controller type
             Write-Verbose -Message "Configuring SCSI controller type to $ScsiType"
-            $ScsiResult = Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type $ScsiType -ErrorAction Stop -ErrorVariable ErrScsiCon
+            $ScsiResult = $CreatedVM | Get-ScsiController -Verbose:$false | Set-ScsiController -Type $ScsiType -ErrorAction Stop -ErrorVariable ErrScsiCon -Verbose:$false
 
             if($NewVMResult -and $AdapterConfigResult -and $ScsiResult){
                 $obj_properties = @{'Name'=$NewVMResult.Name
