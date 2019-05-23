@@ -110,7 +110,10 @@ function New-CustomVMvc2 {
 
     [Parameter(Mandatory=$false)]
     [Switch]
-    $ConfirmConfiguration
+    $ConfirmConfiguration,
+
+    [Parameter(Mandatory=$false)]
+    $LogToFilePath
     )
 
 BEGIN {
@@ -133,7 +136,7 @@ PROCESS {
                 #If no valid hosts, write warning and abort.
                 if(!$ValidHosts){
                     Write-Warning -Message "Can not automatically find any available VM Hosts for $SiteName"
-                    Write-Error -Message "No VM Host for $SiteName found" -ErrorAction Stop
+                    Write-Error -Message "No VM Host for $SiteName found" -ErrorAction Stop -ErrorVariable ErrNoHost
                 }
 
                 if(($ValidHosts.count) -eq 1){
@@ -199,6 +202,8 @@ PROCESS {
                     Sort-Object FreeSpaceGB -Descending |
                     Select-Object -First 1
             } #If $PSBoundParameters.ContainsKey('Datastore')
+
+            #Check that we have enough storage space for the VM on datastore
 
             #Output our configuration for new vm
             Write-Verbose "$NewVM will be created with the following configuration:"
@@ -266,8 +271,9 @@ PROCESS {
             Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type ParaVirtual
         } #Try
         Catch{
-            Write-Verbose 'Something went wrong....'
-            $Error
+            if($ErrNoHost -and $PSBoundParameters.ContainsKey('LogToFilePath')){
+                Write-Output "$NewVM was not created due to no VMHost found for $SiteName." | Out-File -FilePath $LogToFilePath
+            }
         } #Catch
     } #Foreach $vmname
 } #Process
