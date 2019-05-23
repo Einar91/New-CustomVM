@@ -272,7 +272,9 @@ PROCESS {
             Do{
                 $CreatedVM = Get-VM -Name $NewVM -ErrorAction SilentlyContinue -Verbose:$false
                 Write-Verbose "Waiting for creation of VM"
-                Start-Sleep -Seconds 5
+                if(!$CreatedVM){
+                    Start-Sleep -Seconds 2
+                } #If no createdvm
             } Until ($CreatedVM)
 
             #Change number of cores per socket
