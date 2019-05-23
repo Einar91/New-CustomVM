@@ -260,7 +260,7 @@ PROCESS {
             
             #Create VM and configure post creation tasks
             Write-Verbose -Message "Creating task to deploy $NewVM to $ServerHost"
-            New-Vm @NewVM_Param -whatif -ErrorAction Stop
+            New-Vm @NewVM_Param -whatif -ErrorAction Stop -ErrorVariable ErrNewVM
 
             #Make sure VM is available before reconfigurations
             Do{
@@ -301,6 +301,12 @@ PROCESS {
                 if($ErrUserAbort){
                     $ErrUserAbort.ErrorRecord.Exception | Out-File -FilePath $LogToFilePath -Append
                 } #If ErrHostConnection
+
+                #Error handling for error creating VM
+                if($ErrNewVM){
+                    Write-Warning -Message "$NewVM not created, see log."
+                    "$NewVM not created, due to $($ErrNewVM.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
+                }
             } #If log to filepath
         } #Catch
     } #Foreach $vmname
