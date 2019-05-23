@@ -260,7 +260,7 @@ PROCESS {
             
             #Create VM and configure post creation tasks
             Write-Verbose -Message "Creating task to deploy $NewVM to $ServerHost"
-            New-Vm @NewVM_Param -whatif -ErrorAction Stop -ErrorVariable ErrNewVM
+            $NewVMResult = New-Vm @NewVM_Param -whatif -ErrorAction Stop -ErrorVariable ErrNewVM
 
             #Make sure VM is available before reconfigurations
             Do{
@@ -271,16 +271,16 @@ PROCESS {
 
             #Change number of cores per socket
             Write-Verbose -Message "Configuring number of cores per socket to $CoresPerSocket"
-            $ConfigCoresPerSocket = New-Object -TypeName VMware.Vim.VirtualMachineConfigSpec -Property @{"NumCoresPerSocket" = $CoresPerSocket}
-            (Get-VM -Name $NewVM).ExtensionData.ReconfigVM_Task($ConfigCoresPerSocket)
+            $ConfigCoresPerSocket = New-Object -TypeName VMware.Vim.VirtualMachineConfigSpec -Property @{"NumCoresPerSocket" = $CoresPerSocket} -ErrorAction Stop -ErrorVariable ErrCores
+            (Get-VM -Name $NewVM).ExtensionData.ReconfigVM_Task($ConfigCoresPerSocket) | Out-Null
 
             #Change networkadapter type from e1000 to VMXNET3
             Write-Verbose -Message "Configuring network adapter type to $NetAdapterType"
-            Get-VM -Name $NewVM | Get-NetworkAdapter | Set-NetworkAdapter -Type $NetAdapterType -Confirm:$false
+            $AdapterConfigResult = Get-VM -Name $NewVM | Get-NetworkAdapter | Set-NetworkAdapter -Type $NetAdapterType -Confirm:$false
 
             #Change SCSI controller type
             Write-Verbose -Message "Configuring SCSI controller type to $ScsiType"
-            Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type $ScsiType
+            Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type $ScsiType 
 
 
         } #Try
@@ -312,6 +312,13 @@ PROCESS {
                     Write-Warning -Message "$NewVM not created, see log."
                     "$NewVM not created, due to $($ErrNewVM.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
                 }
+
+                #Error handling for postconfig corespersocket
+                if($ErrCores){
+                    Write-Warning -Message "$NewVM failed post-config of CPU, see log."
+                    "$NewVM not created, due to $($ErrCores.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
+                }
+                
             } #If log to filepath
         } #Catch
     } #Foreach $vmname
