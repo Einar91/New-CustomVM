@@ -133,7 +133,7 @@ PROCESS {
             
             #Check if we want to define host for VM by name
             if($PSBoundParameters.ContainsKey('HostByVMName')){
-                Write-Verbose -Message "$(TimeStamp) Setting SiteName by VMName."
+                Write-Verbose -Message "Setting SiteName by VMName."
                 $SiteName = ($NewVM.Substring(0,3)).ToUpper()
             
                 Write-Verbose -Message "Searching avilable host for $SiteName"
@@ -204,7 +204,7 @@ PROCESS {
             If($PSBoundParameters.ContainsKey('Datastore') -eq $false){
                 Write-Verbose "Selecting datastore on $($VMWareHost.name) based on FreeSpace"
                 $Datastore = $VMWareHost |
-                    Get-Datastore |
+                    Get-Datastore -Verbose:$false |
                     Sort-Object FreeSpaceGB -Descending |
                     Select-Object -First 1
             } #If $PSBoundParameters.ContainsKey('Datastore')
