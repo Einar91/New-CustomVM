@@ -209,7 +209,7 @@ PROCESS {
                 $DiskTotalUse = $DiskTotalUse + $Disk
             } #Foreach
             
-            if(($Datastore.FreeSpaceGB) -lt ($DiskTotaluse+100){
+            if(($Datastore.FreeSpaceGB) -lt ($DiskTotaluse+100)){
                 Write-Error -Message "$NewVM not created, the total disks specified is $DiskTotalUse GB and the free space on datastore`
                  $($Datastore.Name) is $($Datastore.FreeSpaceGB)" -ErrorAction Stop -ErrorVariable ErrStorageSpace
             }
