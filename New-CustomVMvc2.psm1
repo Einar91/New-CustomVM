@@ -125,6 +125,12 @@ BEGIN {
 PROCESS {
     foreach($NewVM in $VMName){
         Try{
+            #Check if name is available, if not abort
+            $CheckNameAvailabilty = Get-VM -Name $NewVM -ErrorAction SilentlyContinue
+            if($CheckNameAvailabilty){
+                Write-Error -Message "$NewVM not created, a vm with the name $NewVM allready exist." -ErrorAction Stop -ErrorVariable ErrNameNotAvailable
+            }
+            
             #Check if we want to define host for VM by name
             if($PSBoundParameters.ContainsKey('HostByVMName')){
                 Write-Verbose -Message "$(TimeStamp) Setting SiteName by VMName."
