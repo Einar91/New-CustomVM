@@ -136,7 +136,7 @@ PROCESS {
                 #If no valid hosts, write warning and abort.
                 if(!$ValidHosts){
                     Write-Warning -Message "Can not automatically find any available VM Hosts for $SiteName"
-                    Write-Error -Message "No VM Host for $SiteName found" -ErrorAction Stop -ErrorVariable ErrNoHost
+                    Write-Error -Message "$NewVM was not created due to no VMHost found for $SiteName." -ErrorAction Stop -ErrorVariable ErrNoHost
                 }
 
                 if(($ValidHosts.count) -eq 1){
@@ -210,8 +210,8 @@ PROCESS {
             } #Foreach
             
             if(($Datastore.FreeSpaceGB) -lt ($DiskTotaluse+100){
-                Write-Error -Message "The VMs total disk usage is $DiskTotalUse and the free space on datastore $($Datastore.Name) is`
-                 $($Datastore.FreeSpaceGB)" -ErrorAction Stop -ErrorVariable ErrStorageSpace
+                Write-Error -Message "$NewVM not created, the total disks specified is $DiskTotalUse GB and the free space on datastore`
+                 $($Datastore.Name) is $($Datastore.FreeSpaceGB)" -ErrorAction Stop -ErrorVariable ErrStorageSpace
             }
 
             #Output our configuration for new vm
@@ -280,9 +280,16 @@ PROCESS {
             Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type ParaVirtual
         } #Try
         Catch{
+            #Error handling for no vmhost found
             if($ErrNoHost -and $PSBoundParameters.ContainsKey('LogToFilePath')){
-                Write-Output "$NewVM was not created due to no VMHost found for $SiteName." | Out-File -FilePath $LogToFilePath
-            }
+                $ErrNoHost.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath
+            } #IF ErrNoHost
+
+            #Error handling for not enough storage capacity
+            if($ErrStorageSpace -and $PSBoundParameters.ContainsKey('LogToFilePath')){
+                $ErrStorageSpace.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath
+            } #If ErrStorageSpace
+            
         } #Catch
     } #Foreach $vmname
 } #Process
