@@ -42,7 +42,7 @@ function New-CustomVMvc2 {
 
     [Parameter(Mandatory=$True,
         ValueFromPipelineByPropertyName=$True)]
-    [string]$ViServer,
+    $ViServer,
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
@@ -63,7 +63,7 @@ function New-CustomVMvc2 {
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [string]$Datastore,
+    $Datastore,
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
@@ -204,6 +204,15 @@ PROCESS {
             } #If $PSBoundParameters.ContainsKey('Datastore')
 
             #Check that we have enough storage space for the VM on datastore
+            $DiskTotalUse = 0
+            Foreach($Disk in $DiskGB){
+                $DiskTotalUse = $DiskTotalUse + $Disk
+            } #Foreach
+            
+            if(($Datastore.FreeSpaceGB) -lt ($DiskTotaluse+100){
+                Write-Error -Message "The VMs total disk usage is $DiskTotalUse and the free space on datastore $($Datastore.Name) is`
+                 $($Datastore.FreeSpaceGB)" -ErrorAction Stop -ErrorVariable ErrStorageSpace
+            }
 
             #Output our configuration for new vm
             Write-Verbose "$NewVM will be created with the following configuration:"
@@ -231,7 +240,7 @@ PROCESS {
 
             if($ProceedOrNo -ne 'Y' -or $ProceedOrNo -ne 'y'){
                 Write-Warning -Message "$NewVM not created."
-                throw "$NewVM not created due to user answere to proceed or not with creation."
+                Write-Error "$NewVM not created due to user answere to proceed or not with creation." -ErrorAction Stop -ErrorVariable ErrUserAbort
             }
 
             #Define our New-VM parameters !!!!!!!!!!!!!!! Check vmhost.name datastore.name
