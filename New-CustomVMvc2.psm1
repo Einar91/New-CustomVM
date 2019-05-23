@@ -123,6 +123,9 @@ BEGIN {
 } #Begin
 
 PROCESS {
+    #Trim our VMName inputs, to make sure there is no whitespace
+    $VMName = ($VMName).Trim()
+
     foreach($NewVM in $VMName){
         #Clear our error variables before starting on the next object
         Clear-Variable -Name
