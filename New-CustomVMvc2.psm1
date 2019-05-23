@@ -128,7 +128,7 @@ PROCESS {
 
     foreach($NewVM in $VMName){
         #Clear our error variables before starting on the next object
-        Clear-Variable -Name
+        Clear-Variable -Name 'ErrNameNotAvailable','ErrNoHost','ErrHostConnection','ErrStorageSpace','ErrUserAbort','ErrNewVM','ErrCores','ErrNetAdap','ErrScsiCon' -ErrorAction SilentlyContinue
 
         Try{
             #Check if name is available, if not abort
@@ -247,13 +247,15 @@ PROCESS {
             Write-Verbose "Floppy..................$CD"
             Write-Verbose "CD......................$Floppy"
 
-            #For testing purposes, confirm creation
+            <#
+            For testing purposes, confirm creation
             $ProceedOrNo = Read-Host "Do you wish to continue with creation of $NewVM ? (Y/N)"
 
             if($ProceedOrNo -ne 'Y' -or $ProceedOrNo -ne 'y'){
                 Write-Warning -Message "$NewVM not created."
                 Write-Error "$NewVM not created, due to user answere to proceed or not with creation of VM." -ErrorAction Stop -ErrorVariable ErrUserAbort
             }
+            #>
 
             #Define our New-VM parameters
             $NewVM_Param = @{'Name'=$NewVM
