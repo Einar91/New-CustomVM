@@ -299,6 +299,11 @@ PROCESS {
         Catch{
             #Log errors to filepath if parameter is specified
             if($PSBoundParameters.ContainsKey('LogToFilePath')){
+                #Error handling for ErrNameNotAvailable
+                if($ErrNameNotAvailable){
+                    $ErrNameNotAvailable.ErrorRecord.Exception | Out-File -FilePath $LogToFilePath -Append
+                } #If ErrNameNotAvailable
+                
                 #Error handling for no vmhost found
                 if($ErrNoHost){
                     $ErrNoHost.ErrorRecord.Exception | Out-File -FilePath $LogToFilePath -Append
@@ -323,25 +328,25 @@ PROCESS {
                 if($ErrNewVM){
                     Write-Warning -Message "$NewVM not created, see log."
                     "$NewVM not created, due to $($ErrNewVM.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
-                }
+                } #If ErrNewVM
 
                 #Error handling for postconfig corespersocket
                 if($ErrCores){
                     Write-Warning -Message "$NewVM failed post-config of CPU, see log."
                     "$NewVM not created, due to $($ErrCores.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
-                }
+                } #If ErrCores
                 
                 #Error handling for reconfig of netadaptertype
                 if($ErrNetAdap){
                     Write-Warning -Message "$NewVM failed post-config of CPU, see log."
                     "$NewVM not created, due to $($ErrNetAdap.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
-                }
+                } #If ErrNetAdap
 
                 #Error handling for reconfig of scsitype
                 if($ErrScsiCon){
                     Write-Warning -Message "$NewVM failed post-config of CPU, see log."
                     "$NewVM not created, due to $($ErrScsiCon.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
-                }
+                } #If ErrScsiCon
                 
             } #If log to filepath
         } #Catch
