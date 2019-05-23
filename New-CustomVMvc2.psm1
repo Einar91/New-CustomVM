@@ -136,7 +136,7 @@ PROCESS {
                 #If no valid hosts, write warning and abort.
                 if(!$ValidHosts){
                     Write-Warning -Message "Can not automatically find any available VM Hosts for $SiteName"
-                    Write-Error -Message "$NewVM was not created due to no VMHost found for $SiteName." -ErrorAction Stop -ErrorVariable ErrNoHost
+                    Write-Error -Message "$NewVM not created, due to no VMHost found for $SiteName." -ErrorAction Stop -ErrorVariable ErrNoHost
                 }
 
                 if(($ValidHosts.count) -eq 1){
@@ -174,7 +174,7 @@ PROCESS {
 
             #Make sure our selected host is online, if not abort
             If($VMWareHost.ConnectionState -notmatch 'Connected'){
-                Write-Error -Message "The VMHost $($VMWareHost.name) ConnectionState is not equal Connected." -ErrorAction Stop
+                Write-Error -Message "$NewVM not created, the VMHost $($VMWareHost.name) ConnectionState is not equal Connected." -ErrorAction Stop -ErrorVariable ErrHostConnection
             }
 
             #Select portgroup if not defined by parameter
@@ -284,6 +284,11 @@ PROCESS {
             if($ErrNoHost -and $PSBoundParameters.ContainsKey('LogToFilePath')){
                 $ErrNoHost.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath
             } #IF ErrNoHost
+
+            #Error handling for vmhost connection state not connected
+            if($ErrHostConnection -and $PSBoundParameters.ContainsKey('LogToFilePath')){
+                $ErrHostConnection.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath
+            } #If ErrStorageSpace
 
             #Error handling for not enough storage capacity
             if($ErrStorageSpace -and $PSBoundParameters.ContainsKey('LogToFilePath')){
