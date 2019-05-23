@@ -132,6 +132,7 @@ PROCESS {
 
         Try{
             #Check if name is available, if not abort
+            Write-Verbose -Message "Checking if name $NewVM is not in use allready."
             $CheckNameAvailabilty = Get-VM -Name $NewVM -ErrorAction SilentlyContinue -Verbose:$false
             if($CheckNameAvailabilty){
                 Write-Error -Message "$NewVM not created, a vm with the name $NewVM allready exist." -ErrorAction Stop -ErrorVariable ErrNameNotAvailable
@@ -222,8 +223,7 @@ PROCESS {
             } #Foreach
             
             if(($Datastore.FreeSpaceGB) -lt ($DiskTotaluse+100)){
-                Write-Error -Message "$NewVM not created, the total disks specified is $DiskTotalUse GB and the free space on datastore`
-                 $($Datastore.Name) is $($Datastore.FreeSpaceGB)" -ErrorAction Stop -ErrorVariable ErrStorageSpace
+                Write-Error -Message "$NewVM not created, the total disks specified is $DiskTotalUse GB and the free space on datastore $($Datastore.Name) is $($Datastore.FreeSpaceGB)" -ErrorAction Stop -ErrorVariable ErrStorageSpace
             }
 
             #Output our configuration for new vm
