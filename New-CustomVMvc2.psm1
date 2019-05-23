@@ -284,22 +284,22 @@ PROCESS {
             if($PSBoundParameters.ContainsKey('LogToFilePath')){
                 #Error handling for no vmhost found
                 if($ErrNoHost){
-                    $ErrNoHost.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath -Append
+                    $ErrNoHost.ErrorRecord.Exception | Out-File -FilePath $LogToFilePath -Append
                 } #If ErrNoHost
 
                 #Error handling for vmhost connection state not connected
                 if($ErrHostConnection){
-                    $ErrHostConnection.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath -Append
+                    $ErrHostConnection.ErrorRecord.Exception | Out-File -FilePath $LogToFilePath -Append
                 } #If ErrHostConnection
 
                 #Error handling for not enough storage capacity
                 if($ErrStorageSpace){
-                    $ErrStorageSpace.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath -Append
+                    $ErrStorageSpace.ErrorRecord.Exception | Out-File -FilePath $LogToFilePath -Append
                 } #If ErrStorageSpace
 
                 #Error handling for user abortion to proceede or not ErrUserAbort
                 if($ErrUserAbort){
-                    $ErrUserAbort.ErrorRecord.ErrorDetails | Out-File -FilePath $LogToFilePath -Append
+                    $ErrUserAbort.ErrorRecord.Exception | Out-File -FilePath $LogToFilePath -Append
                 } #If ErrHostConnection
             } #If log to filepath
         } #Catch
