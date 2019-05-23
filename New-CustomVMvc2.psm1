@@ -124,6 +124,9 @@ BEGIN {
 
 PROCESS {
     foreach($NewVM in $VMName){
+        #Clear our error variables before starting on the next object
+        Clear-Variable -Name
+
         Try{
             #Check if name is available, if not abort
             $CheckNameAvailabilty = Get-VM -Name $NewVM -ErrorAction SilentlyContinue -Verbose:$false
@@ -340,13 +343,13 @@ PROCESS {
                 
                 #Error handling for reconfig of netadaptertype
                 if($ErrNetAdap){
-                    Write-Warning -Message "$NewVM failed post-config of CPU, see log."
+                    Write-Warning -Message "$NewVM failed post-config of network adapter, see log."
                     "$NewVM not created, due to $($ErrNetAdap.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
                 } #If ErrNetAdap
 
                 #Error handling for reconfig of scsitype
                 if($ErrScsiCon){
-                    Write-Warning -Message "$NewVM failed post-config of CPU, see log."
+                    Write-Warning -Message "$NewVM failed post-config of SCSI controller, see log."
                     "$NewVM not created, due to $($ErrScsiCon.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
                 } #If ErrScsiCon
                 
