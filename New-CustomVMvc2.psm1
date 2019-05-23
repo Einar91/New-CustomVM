@@ -280,9 +280,14 @@ PROCESS {
 
             #Change SCSI controller type
             Write-Verbose -Message "Configuring SCSI controller type to $ScsiType"
-            Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type $ScsiType -ErrorAction Stop -ErrorVariable ErrScsiCon
+            $ScsiResult = Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type $ScsiType -ErrorAction Stop -ErrorVariable ErrScsiCon
 
-
+            if($NewVMResult -and $AdapterConfigResult -and $ScsiResult){
+                $obj_properties = @{'Name'=$NewVMResult.Name
+                                    'MacAddress'=$AdapterConfigResult.MacAddress}
+                $obj = New-Object psobject -Property $obj_properties
+                $obj
+            }
 
         } #Try
         Catch{
