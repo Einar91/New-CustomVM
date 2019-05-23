@@ -280,7 +280,7 @@ PROCESS {
 
             #Change SCSI controller type
             Write-Verbose -Message "Configuring SCSI controller type to $ScsiType"
-            Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type $ScsiType 
+            Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type $ScsiType -ErrorAction Stop -ErrorVariable ErrScsiCon
 
 
 
@@ -320,10 +320,16 @@ PROCESS {
                     "$NewVM not created, due to $($ErrCores.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
                 }
                 
-                #Error handling for reconfig netadaptertype
+                #Error handling for reconfig of netadaptertype
                 if($ErrNetAdap){
                     Write-Warning -Message "$NewVM failed post-config of CPU, see log."
                     "$NewVM not created, due to $($ErrNetAdap.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
+                }
+
+                #Error handling for reconfig of scsitype
+                if($ErrScsiCon){
+                    Write-Warning -Message "$NewVM failed post-config of CPU, see log."
+                    "$NewVM not created, due to $($ErrScsiCon.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
                 }
                 
             } #If log to filepath
