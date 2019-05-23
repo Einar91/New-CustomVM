@@ -77,7 +77,7 @@ function New-CustomVMvc2 {
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
     [ValidateSet('ParaVirtual')]
-    [string]$ScsiType = 'ParaVirtual',
+    $ScsiType = 'ParaVirtual',
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
@@ -93,8 +93,8 @@ function New-CustomVMvc2 {
 
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [ValidateSet('Vmxnet3')]
-    [string]$NetAdapterType = 'Vmxnet3',
+    [ValidateSet('Vmxnet3','EnhancedVmxnet','Vmxnet','Flexible','e1000','Unknown')]
+    $NetAdapterType = 'Vmxnet3',
 
     [Parameter(Mandatory=$false)]
     [Switch]
@@ -270,14 +270,19 @@ PROCESS {
             } Until ($FoundVM)
 
             #Change number of cores per socket
+            Write-Verbose -Message "Configuring number of cores per socket to $CoresPerSocket"
             $ConfigCoresPerSocket = New-Object -TypeName VMware.Vim.VirtualMachineConfigSpec -Property @{"NumCoresPerSocket" = $CoresPerSocket}
             (Get-VM -Name $NewVM).ExtensionData.ReconfigVM_Task($ConfigCoresPerSocket)
 
             #Change networkadapter type from e1000 to VMXNET3
-            Get-VM -Name $NewVM | Get-NetworkAdapter | Set-NetworkAdapter -Type Vmxnet3 -Confirm:$false
+            Write-Verbose -Message "Configuring network adapter type to $NetAdapterType"
+            Get-VM -Name $NewVM | Get-NetworkAdapter | Set-NetworkAdapter -Type $NetAdapterType -Confirm:$false
 
             #Change SCSI controller type
-            Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type ParaVirtual
+            Write-Verbose -Message "Configuring SCSI controller type to $ScsiType"
+            Get-VM -Name $NewVM | Get-ScsiController | Set-ScsiController -Type $ScsiType
+
+
         } #Try
         Catch{
             #Log errors to filepath if parameter is specified
