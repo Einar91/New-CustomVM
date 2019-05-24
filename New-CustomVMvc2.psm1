@@ -209,6 +209,11 @@ PROCESS {
                         Sort-Object VLanId -Descending |
                         Select-Object -First 1
                 } #If
+
+                #Make sure we found a portgroup, if not abort
+                if(!$Portgroup){
+                    Write-Error -Message "$NewVM not created, could not find any alternative portgroup on $($VMWareHost.name)" -ErrorAction Stop -ErrorVariable ErrPortGroup
+                }
             } #If $PSBoundParameters.ContainsKey('Portgroup')
 
             #Select datastore if not defined by parameter
@@ -328,6 +333,11 @@ PROCESS {
                 if($ErrHostConnection){
                     $ErrHostConnection.ErrorRecord.Exception | Out-File -FilePath $LogToFilePath -Append
                 } #If ErrHostConnection
+
+                #Error handling for no portgroup found
+                if($ErrPortGroup){
+                    $ErrPortGroup.ErrorRecord.Exception | Out-File -FilePath $LogToFilePath -Append
+                } #If ErrStorageSpace
 
                 #Error handling for not enough storage capacity
                 if($ErrStorageSpace){
