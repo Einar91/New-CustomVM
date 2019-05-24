@@ -37,7 +37,7 @@ function New-CustomVMvc2 {
     
     [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$True)]
-    [ValidateSet('windows8Server64Guest','Win2012_x64','Win2016_x64','Win2019_x64')]
+    [ValidateSet('windows8Server64Guest','windows9Server64Guest','Win2012_x64','Win2016_x64','Win2019_x64')]
     [string]$GuestOs = 'windows8Server64Guest',
 
     [Parameter(Mandatory=$false,
