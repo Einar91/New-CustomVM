@@ -5,6 +5,10 @@ Start your design with writing out the examples as a functional spesification.
 .DESCRIPTION
 .PARAMETER
 .EXAMPLE
+New-CustomVMvc2 -ViServer VCENTER.Local -DiskGB 100,8 -CD -Floppy -HostByVMName -LogToFilePath c:\einar\errorlog.txt -Verbose -VMName (Get-Content servers.txt)
+Typical setup for creating multiple server with different names but equal hardware, HostByVMName will automatically select host and portgroup.
+It will then use the default for other parameters if not specified.
+.EXAMPLE
 New-CustomVMvc2 -VMName SRV1 -Verbose -GuestOs Win2012R2
 .EXAMPLE
 New-CustomVMvc2 -VMName SRV1 -Verbose -GuestOs Win2012R2 -SiteName EinarLab
