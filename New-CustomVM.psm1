@@ -140,7 +140,7 @@ PROCESS {
             $CheckNameAvailabilty = Get-VM -Name $NewVM -ErrorAction SilentlyContinue -Verbose:$false
             if($CheckNameAvailabilty){
                 Write-Error -Message "$NewVM not created, a vm with the name $NewVM allready exist." -ErrorAction Stop -ErrorVariable ErrNameNotAvailable
-            }
+            } #If
             
             #Check if we want to define host for VM by name
             if($PSBoundParameters.ContainsKey('HostByVMName')){
@@ -154,7 +154,7 @@ PROCESS {
                 if(!$ValidHosts){
                     Write-Warning -Message "Can not automatically find any available VM Hosts for $SiteName"
                     Write-Error -Message "$NewVM not created, due to no VMHost found for $SiteName." -ErrorAction Stop -ErrorVariable ErrNoHost
-                }
+                } #If
 
                 if(($ValidHosts.count) -eq 1){
                     $ServerHost = $ValidHosts | Select-Object -ExpandProperty Name
@@ -192,7 +192,7 @@ PROCESS {
             #Make sure our selected host is online, if not abort
             If($VMWareHost.ConnectionState -notmatch 'Connected'){
                 Write-Error -Message "$NewVM not created, the VMHost $($VMWareHost.name) ConnectionState is not equal Connected." -ErrorAction Stop -ErrorVariable ErrHostConnection
-            }
+            } #If
 
             #Select portgroup if not defined by parameter
             If($PSBoundParameters.ContainsKey('Portgroup') -eq $false){
@@ -213,7 +213,7 @@ PROCESS {
                 #Make sure we found a portgroup, if not abort
                 if(!$Portgroup){
                     Write-Error -Message "$NewVM not created, could not find any alternative portgroup on $($VMWareHost.name)" -ErrorAction Stop -ErrorVariable ErrPortGroup
-                }
+                } #If
             } #If $PSBoundParameters.ContainsKey('Portgroup')
 
             #Select datastore if not defined by parameter
@@ -233,7 +233,7 @@ PROCESS {
             
             if(($Datastore.FreeSpaceGB) -lt ($DiskTotaluse+100)){
                 Write-Error -Message "$NewVM not created, the total disks specified is $DiskTotalUse GB and the free space on datastore $($Datastore.Name) is $($Datastore.FreeSpaceGB)" -ErrorAction Stop -ErrorVariable ErrStorageSpace
-            }
+            } #If
 
             #Output our configuration for new vm
             Write-Verbose "$NewVM will be created with the following configuration:"
@@ -265,7 +265,7 @@ PROCESS {
                 Write-Error "$NewVM not created, due to user answere to proceed or not with creation of VM." -ErrorAction Stop -ErrorVariable ErrUserAbort
             }
             #>
-
+            
             #Define our New-VM parameters
             $NewVM_Param = @{'Name'=$NewVM
                                     'Server'=$ViServer
@@ -283,12 +283,12 @@ PROCESS {
             
             #Create VM and configure post creation tasks
             Write-Verbose -Message "Creating task to deploy $NewVM to $ServerHost"
-            $NewVMResult = New-Vm @NewVM_Param -ErrorAction Stop -ErrorVariable ErrNewVM
-
+            $NewVMResult = New-Vm @NewVM_Param -ErrorAction Stop -ErrorVariable ErrNewVM -RunAsync
+            
             #Make sure VM is available before reconfigurations
             Do{
                 $CreatedVM = Get-VM -Name $NewVM -ErrorAction SilentlyContinue -Verbose:$false
-                Write-Verbose "Waiting for creation of VM"
+                Write-Verbose "Waiting for creation of VM.."
                 if(!$CreatedVM){
                     Start-Sleep -Seconds 2
                 } #If no createdvm
@@ -301,20 +301,30 @@ PROCESS {
 
             #Change networkadapter type from e1000 to VMXNET3
             Write-Verbose -Message "Configuring network adapter type to $NetAdapterType"
-            $AdapterConfigResult = $CreatedVM | Get-NetworkAdapter -Verbose:$false | Set-NetworkAdapter -Type $NetAdapterType -Confirm:$false -ErrorAction Stop -ErrorVariable ErrNetAdap -Verbose:$false
+            $AdapterConfigJob = $CreatedVM | Get-NetworkAdapter -Verbose:$false | Set-NetworkAdapter -Type $NetAdapterType -Confirm:$false -ErrorAction Stop -ErrorVariable ErrNetAdap -Verbose:$false -RunAsync
 
-            #Change SCSI controller type
+            #Wait for netadapter task to complete / wait-task will fail if the vcenter is fast = silentlycontinue
+            $AdapterConfigJob | Wait-Task -ErrorAction SilentlyContinue -Verbose:$false
+            $AdapterConfigResult = $CreatedVM | Get-NetworkAdapter -Verbose:$false
+
+            #Change SCSI controller type / SilentlyContinue as set-scsi runs async as standard, and will fail if vcenter is fast = silentlycontinue
             Write-Verbose -Message "Configuring SCSI controller type to $ScsiType"
-            $ScsiResult = $CreatedVM | Get-ScsiController -Verbose:$false | Set-ScsiController -Type $ScsiType -ErrorAction Stop -ErrorVariable ErrScsiCon -Verbose:$false
+            $ScsiJob = $CreatedVM | Get-ScsiController -Verbose:$false | Set-ScsiController -Type $ScsiType -ErrorAction SilentlyContinue -ErrorVariable ErrScsiCon -Verbose:$false
 
-            if($NewVMResult -and $AdapterConfigResult -and $ScsiResult){
-                $obj_properties = @{'Name'=$NewVMResult.Name
+            # Wait for SCSI config task to complete / wait-task will fail if the vcenter is fast = silentlycontinue
+            $ScsiJob | Wait-Task -ErrorAction SilentlyContinue -Verbose:$false
+            $ScsiResult = $CreatedVM | Get-ScsiController -Verbose:$false
+
+            if($CreatedVM){
+                $obj_properties = @{'Name'=$NewVM
                                     'MacAddress'=$AdapterConfigResult.MacAddress
-                                    'PortGroup'=$AdapterConfigResult.NetworkName}
+                                    'PortGroup'=$AdapterConfigResult.NetworkName
+                                    'AdapterType'=$AdapterConfigResult.Type
+                                    'ScsiController'=$ScsiResult.Type
+                                    'PowerState'=$CreatedVM.PowerState}
                 $obj = New-Object psobject -Property $obj_properties
                 $obj
-            }
-
+            } #If createdvm
         } #Try
         Catch{
             #Log errors to filepath if parameter is specified
@@ -372,12 +382,10 @@ PROCESS {
                     Write-Warning -Message "$NewVM failed post-config of SCSI controller, see log."
                     "$NewVM not created, due to $($ErrScsiCon.ErrorRecord.Exception)" | Out-File -FilePath $LogToFilePath -Append
                 } #If ErrScsiCon
-                
             } #If log to filepath
         } #Catch
     } #Foreach $vmname
 } #Process
-
 
 END {
     # Intentionaly left empty.
